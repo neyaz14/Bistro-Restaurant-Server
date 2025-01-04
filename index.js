@@ -27,18 +27,64 @@ async function run() {
     // await client.connect();
     const menuCollection = client.db("BistroBoss").collection("menu");
     const reviewCollection = client.db("BistroBoss").collection("reviews");
+    const cartsCollection  = client.db("BistroBoss").collection("reviews");
+
     app.get('/menu', async (req, res) => {
       const result = await menuCollection.find().toArray();
       res.send(result);
-  });
-  app.get('/reviews', async (req, res) => {
-    const result = await reviewCollection.find().toArray();
-    res.send(result);
-});
+    });
+    app.get('/reviews', async (req, res) => {
+      const result = await reviewCollection.find().toArray();
+      res.send(result);
+    });
+
+    // carts collection 
+    app.get('/carts', async (req, res) => {
+      const result = await cartsCollection.find().toArray();
+      res.send(result);
+    }); 
+    app.post('/carts', async (req, res) => {
+      const cartItem = req.body;
+      const result = await cartsCollection.insertOne(cartItem);
+      res.send(result);
+    });
 
 
-    // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
@@ -49,9 +95,9 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('boss is sitting')
+  res.send('boss is sitting')
 })
 
 app.listen(port, () => {
-    console.log(`Bistro boss is sitting on port ${port}`);
+  console.log(`Bistro boss is sitting on port ${port}`);
 })
