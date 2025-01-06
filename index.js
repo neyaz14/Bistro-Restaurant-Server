@@ -27,7 +27,8 @@ async function run() {
     // await client.connect();
     const menuCollection = client.db("BistroBoss").collection("menu");
     const reviewCollection = client.db("BistroBoss").collection("reviews");
-    const cartsCollection  = client.db("BistroBoss").collection("carts");
+    const cartsCollection = client.db("BistroBoss").collection("carts");
+    const userCollection = client.db("BistroBoss").collection("users");
 
     app.get('/menu', async (req, res) => {
       const result = await menuCollection.find().toArray();
@@ -47,17 +48,11 @@ async function run() {
     // }); 
     app.get('/carts', async (req, res) => {
       const email = req.query.email;
-      // if(!email){
-      //   console.log('email not found ')
-      // }else{
-      //   console.log('email founded', email)
-      // }
       const query = { userEmail: email };
-      // console.log(query)
       const result = await cartsCollection.find(query).toArray();
       res.send(result);
-    }); 
-    
+    });
+
     app.post('/carts', async (req, res) => {
       const cartItem = req.body;
       const result = await cartsCollection.insertOne(cartItem);
@@ -65,22 +60,32 @@ async function run() {
     });
 
 
-  //  cart delete from /dashboard/api
-  app.delete('/carts/:id', async (req, res) => {
-   try{
-    const id = req.params.id;
-    // console.log(id)
-    const query = { _id: new ObjectId(id) }
-    const result = await cartsCollection.deleteOne(query);
-    res.send(result);
-   }
-   catch (error) {
-    console.error('Error deleting cart item:', error);
-   
-}
-  })
+    //  cart delete from /dashboard/api
+    app.delete('/carts/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        // console.log(id)
+        const query = { _id: new ObjectId(id) }
+        const result = await cartsCollection.deleteOne(query);
+        res.send(result);
+      }
+      catch (error) {
+        console.error('Error deleting cart item:', error);
 
+      }
+    })
 
+// user data
+app.post("/users", async (req, res) => {
+  const user = req.body;
+  const query = { email: user.email };
+  const existingUser = await userCollection.findOne(query);
+  if (existingUser) {
+    return res.send({ message: "user already exists", insertedId: null });
+  }
+  const result = await userCollection.insertOne(user);
+  res.send(result);
+});
 
 
 
