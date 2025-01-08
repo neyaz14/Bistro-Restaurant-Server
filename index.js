@@ -31,15 +31,25 @@ async function run() {
     const reviewCollection = client.db("BistroBoss").collection("reviews");
     const cartsCollection = client.db("BistroBoss").collection("carts");
     const userCollection = client.db("BistroBoss").collection("users");
-    // jwt token api
+
+
+    
+    //------------------>>   jwt token api  ----
     app.post('/jwt', async (req, res) => {
       const user = req.body;
+      console.log(user)
       const token = jwt.sign(user, process.env.Secrect_key_accessToken, { expiresIn: '1h' });
       res.send({ token });
     })
+
+
+
+
+
+
     // ------------------- middelware -------------------
     const verifyToken = (req, res, next) => {
-      console.log('inside verify token', req.headers.authorization);
+      // console.log('inside verify token', req.headers.authorization);
       if (!req.headers.authorization) {
         return res.status(401).send({ message: 'unauthorized access' });
       }
