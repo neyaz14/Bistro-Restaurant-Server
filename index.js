@@ -33,11 +33,11 @@ async function run() {
     const userCollection = client.db("BistroBoss").collection("users");
 
 
-    
+
     //------------------>>   jwt token api  ----
     app.post('/jwt', async (req, res) => {
       const user = req.body;
-      console.log(user)
+      // console.log(user)
       const token = jwt.sign(user, process.env.Secrect_key_accessToken, { expiresIn: '1h' });
       res.send({ token });
     })
@@ -62,17 +62,45 @@ async function run() {
         next();
       })
     }
-// check user if he is admin 
-    const verifyAdmin =async (req, res, next)=>{
+    // check user if he is admin 
+    const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
-      const query = {email:email};
+      const query = { email: email };
       const user = await userCollection.findOne(query);
       const isadmin = user.role === 'admin';
-      if(!isadmin){
-        return res.status(403).send({message: 'forbidden access'})
+      if (!isadmin) {
+        return res.status(403).send({ message: 'forbidden access' })
       }
       next();
     }
+
+    // ----------------- to make user an admin
+    app.patch("/users/admin/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          role: "admin",
+        },
+      };
+      const result = await userCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
+    app.get('/users/admin/:email', verifyToken, async (req, res) => {
+      const email = req.params.email;
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      let isadmin = false;
+      if (user) {
+        isadmin = user.role === 'admin'
+      }
+      // console.log(isadmin)
+      res.send({ isadmin })
+    })
 
 
 
@@ -130,47 +158,17 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/users", verifyToken,verifyAdmin, async (req, res) => {
+    app.get("/users", verifyToken, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
     });
 
-    app.delete("/users/:id",verifyToken, verifyAdmin, async (req, res) => {
+    app.delete("/users/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await userCollection.deleteOne(query);
       res.send(result);
     });
-    // ----------------- to make user an admin
-    app.patch("/users/admin/:id",verifyToken, verifyAdmin, async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const updatedDoc = {
-        $set: {
-          role: "admin",
-        },
-      };
-      const result = await userCollection.updateOne(filter, updatedDoc);
-      res.send(result);
-    });
-
-    app.get('/users/admin/:email', verifyToken, async (req, res) =>{
-      const email = req.params.email;
-
-      if (email !== req.decoded.email) {
-        return res.status(403).send({ message: 'forbidden access' });
-      }
-
-      const query = { email: email };
-      const user = await userCollection.findOne(query);
-      let isadmin = false;
-      if (user){
-        isadmin = user.role === 'admin'
-      }
-      res.send({isadmin})
-
-  })
-
 
 
 
