@@ -116,11 +116,44 @@ async function run() {
       const result = await menuCollection.insertOne(menuItem);
       res.send(result);
     });
+    // TODO : not geting the value of single menu
+    app.get('/menu/:id', async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await menuCollection.findOne(query);
+      res.send(result)
+    })
+    // TODO : DELETE MENU ITEM
+    app.delete('/menu/:id',verifyToken, verifyAdmin, async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await menuCollection.deleteOne(query);
+      res.send(result)
+    })
+    app.patch('/menu/:id', async (req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updatedDoc = {
+        $set: {
+          name: item.name,
+          category: item.category,
+          price: item.price,
+          recipe: item.recipe,
+          image: item.image
+        }
+      }
+
+      const result = await menuCollection.updateOne(filter, updatedDoc)
+      res.send(result);
+    })
+
+
+    
     app.get('/reviews', async (req, res) => {
       const result = await reviewCollection.find().toArray();
       res.send(result);
     });
-
 
     app.get('/carts', async (req, res) => {
       const email = req.query.email;
@@ -134,7 +167,6 @@ async function run() {
       const result = await cartsCollection.insertOne(cartItem);
       res.send(result);
     });
-
 
     //  cart delete from /dashboard/api
     app.delete('/carts/:id', async (req, res) => {
