@@ -111,27 +111,41 @@ async function run() {
       const result = await menuCollection.find().toArray();
       res.send(result);
     });
-    app.post('/menu',verifyToken, verifyAdmin, async (req, res) => {
+    app.post('/menu', verifyToken, verifyAdmin, async (req, res) => {
       const menuItem = req.body;
       const result = await menuCollection.insertOne(menuItem);
       res.send(result);
     });
-    // TODO : not geting the value of single menu
+    
     app.get('/menu/:id', async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) }
-      // auto seted data -- er id objectId na, ekhane conditional rendaring korte hobe 
-      const result = await menuCollection.findOne(query);
-      console.log(result)
-      res.send(result);
+      let result;
+      try {
+        const objectIdQuery = { _id: new ObjectId(id) };
+        result = await menuCollection.findOne(objectIdQuery);
+      } catch (error) {
+        console.warn('Invalid ObjectId format:', error);
+      }
+
+      if (!result) {
+        const objectQuery = { _id: id };
+        result = await menuCollection.findOne(objectQuery);
+      }
+
+      if (result) {
+        res.send(result);
+      } else {
+        res.status(404).send({ message: 'Document not found' });
+      }
+
     })
 
 
     // TODO : DELETE MENU ITEM
-    app.delete('/menu/:id',verifyToken, verifyAdmin, async(req, res)=>{
+    app.delete('/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
-      console.log(id,query)
+      const query = { _id: new ObjectId(id) };
+      console.log(id, query)
       const result = await menuCollection.deleteOne(query);
       res.send(result)
     })
