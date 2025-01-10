@@ -130,6 +130,7 @@ async function run() {
       if (!result) {
         const objectQuery = { _id: id };
         result = await menuCollection.findOne(objectQuery);
+        // console.log('res from second :', result)
       }
 
       if (result) {
@@ -144,10 +145,29 @@ async function run() {
     // TODO : DELETE MENU ITEM
     app.delete('/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      console.log(id, query)
-      const result = await menuCollection.deleteOne(query);
-      res.send(result)
+      let result;
+      let founded;
+      try {
+        const objectIdQuery = { _id: new ObjectId(id) };
+        founded = await menuCollection.findOne(objectIdQuery);
+        result = await menuCollection.deleteOne(objectIdQuery);
+        // console.log("from Objectid res:", result, ",  id:" ,objectIdQuery)
+      } catch (error) {
+        console.warn('Invalid ObjectId format:', error);
+      }
+      if (!founded) {
+        const objectQuery = { _id: id };
+        founded = await menuCollection.findOne(objectQuery);
+        result = await menuCollection.deleteOne(objectQuery);
+        // console.log("from id res:", result, ",  id:" ,objectQuery)
+      }
+      // console.log(founded)
+      if (founded) {
+        res.send(result);
+      } else {
+        res.status(404).send({ message: 'Document not found' });
+      }
+      // res.send(result)
     })
 
 
