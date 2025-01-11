@@ -284,24 +284,33 @@ async function run() {
     });
 
 
-// for payment info 
-app.post('/payments', async (req, res) => {
-  const paymentInfo = req.body;
-  const paymentResult = await paymentCollection.insertOne(paymentInfo);
+    // for payment info 
+    app.post('/payments', async (req, res) => {
+      const paymentInfo = req.body;
+      const paymentResult = await paymentCollection.insertOne(paymentInfo);
 
-  // console.log('payment info', paymentInfo);
-  //  carefully delete each item from the cart
-  const query = {
-    _id: {
-      $in: paymentInfo.cartIds.map(id => new ObjectId(id))
-    }
-  };
+      // console.log('payment info', paymentInfo);
+      //  carefully delete each item from the cart
+      const query = {
+        _id: {
+          $in: paymentInfo.cartIds.map(id => new ObjectId(id))
+        }
+      };
 
-  const deleteResult = await cartsCollection.deleteMany(query);
+      const deleteResult = await cartsCollection.deleteMany(query);
 
-  res.send({ paymentResult, deleteResult });
-  // res.send(paymentResult);
-})
+      res.send({ paymentResult, deleteResult });
+      // res.send(paymentResult);
+    })
+    app.get('/payments/:email', verifyToken, async (req, res) => {
+      const query = { email: req.params.email }
+      if (req.params.email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    })
+
 
 
 
