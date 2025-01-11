@@ -2,13 +2,15 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-// const cookieParser = require('cookie-parser');
+// This is your test secret API key.
 require('dotenv').config()
+const stripe = require("stripe")(process.env.Stripe_key);
 const port = process.env.PORT || 5000;
 
 // middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static("public"));
 
 
 const { MongoClient, ServerApiVersion, ObjectId, Admin } = require('mongodb');
@@ -31,6 +33,8 @@ async function run() {
     const reviewCollection = client.db("BistroBoss").collection("reviews");
     const cartsCollection = client.db("BistroBoss").collection("carts");
     const userCollection = client.db("BistroBoss").collection("users");
+    const paymentCollection = client.db("BistroBoss").collection("payments");
+
 
 
 
@@ -116,7 +120,7 @@ async function run() {
       const result = await menuCollection.insertOne(menuItem);
       res.send(result);
     });
-    
+
     app.get('/menu/:id', async (req, res) => {
       const id = req.params.id;
       let result;
@@ -142,7 +146,7 @@ async function run() {
     })
 
 
-    // TODO : DELETE MENU ITEM
+
     app.delete('/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       let result;
@@ -170,7 +174,7 @@ async function run() {
       // res.send(result)
     })
 
-
+    // TODO : Does work successfully 
     app.patch('/menu/:id', async (req, res) => {
       const item = req.body;
       const id = req.params.id;
@@ -249,9 +253,55 @@ async function run() {
     });
 
 
+    //--------------------------- Stripe payment intent ------------
+
+    // // creating payment intent
+    // app.post('/create-payment-intent', async (req,res)=>{
+    //   const {price } = req.body;
+    //   const amount = parseInt(price * 100);
+    //   const paymentIntent = await stripe.paymentIntents({
+    //     amount: calculateOrderAmount(price),
+    //     currency: 'usd',
+    //     payment_methods_types:['card'],
+    //     automatic_payment_methods: {
+    //       enabled: true,
+    //     },
+    //   });
+    //   res.send({clientSecret: paymentIntent.client_secret,});
+    // })
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    });
 
 
+// for payment info 
+app.post('/payments', async (req, res) => {
+  const paymentInfo = req.body;
+  const paymentResult = await paymentCollection.insertOne(paymentInfo);
 
+  // console.log('payment info', paymentInfo);
+  //  carefully delete each item from the cart
+  const query = {
+    _id: {
+      $in: paymentInfo.cartIds.map(id => new ObjectId(id))
+    }
+  };
+
+  const deleteResult = await cartsCollection.deleteMany(query);
+
+  res.send({ paymentResult, deleteResult });
+  // res.send(paymentResult);
+})
 
 
 
